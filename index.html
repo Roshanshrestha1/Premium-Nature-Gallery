@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title> Premium Nature Gallery 
+    </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tailwind CSS via jsDelivr -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+  <!-- Google Fonts for elegant typography -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@3.3.1/index.css">
+  <!-- SwiperJS for 3D carousel -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css">
+  <style>
+    html, body {
+      font-family: InterVariable, 'Inter', Arial, sans-serif;
+      background: #171923;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      color: #ececec;
+      scroll-behavior: smooth;
+    }
+    body {
+      background: radial-gradient(ellipse at 70% 20%, #293149 30%, #121320 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .glass {
+      backdrop-filter: blur(17px) saturate(180%);
+      background: rgba(34, 39, 60, 0.35);
+      border-radius: 16px;
+      box-shadow: 0 4px 32px 0 rgba(14, 21, 34, 0.32);
+      border: 1px solid rgba(255,255,255,0.09);
+    }
+    .magnifier {
+      position: absolute;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.2);
+      pointer-events: none;
+      z-index: 40;
+      width: 180px;
+      height: 180px;
+      display: none;
+      overflow: hidden;
+      background: #111;
+    }
+    .thumbnail-active {
+      border: 3px solid #5eead4 !important;
+      box-shadow: 0 0 0 2px #0e7490 !important;
+      opacity: 1 !important;
+    }
+    /* For modern fade/slide/zoom transitions */
+    .gallery-img {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0;
+      transform: scale(0.975) translateX(28px);
+      transition: opacity 0.65s cubic-bezier(.44,.14,.1,1), transform 0.7s cubic-bezier(.49,.23,.2,.86);
+      z-index: 10;
+    }
+    .gallery-img.active {
+      opacity: 1;
+      transform: scale(1) translateX(0);
+      z-index: 30;
+    }
+    .gallery-img.fade-out {
+      opacity: 0;
+    }
+    .gallery-img.slide-up {
+      transform: translateY(-40px) scale(1.08);
+      opacity: 0;
+    }
+    .gallery-img.zoom-out {
+      transform: scale(1.12) translateX(0);
+      opacity: 0;
+    }
+    .carousel-thumb {
+      border-radius: 10px;
+      border: 2px solid #222d41;
+      transition: border 0.2s, box-shadow 0.2s, opacity 0.2s;
+      opacity: 0.7;
+      cursor: pointer;
+      object-fit: cover;
+      width: 80px;
+      height: 54px;
+    }
+    .carousel-thumb:hover {
+      opacity: 1;
+      border: 2px solid #5eead4;
+    }
+    .glass-panel {
+      background: rgba(27, 30, 42, 0.78);
+      border-radius: 16px;
+      box-shadow: 0 4px 28px 0 rgba(14, 21, 34, 0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .filter-chip {
+      border-radius: 9999px;
+      border: 2px solid #38bdf8;
+      background: rgba(34, 39, 60, 0.11);
+      padding: 0.25rem 1.1rem;
+      margin: 0 0.35rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s, color 0.12s, border 0.13s;
+      color: #bae6fd;
+    }
+    .filter-chip.selected, .filter-chip:active {
+      background: #38bdf8;
+      color: #08182a;
+      border-color: #5eead4;
+    }
+    /* Cinematic entrance animation */
+    .fade-in-up {
+      opacity: 0;
+      transform: translateY(20vh);
+      animation: riseIn 1.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes riseIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    /* Parallax effect */
+    .gallery-parallax {
+      will-change: background;
+      transition: background 0.7s cubic-bezier(.42,.11,.21,.88);
+      background: linear-gradient(100deg, #0b1226 0%, #193c69 100%);
+    }
+    .credit-signature {
+      font-family: 'InterVariable', 'Inter',sans-serif;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+      background: linear-gradient(87deg, #19ffa0 25%, #22d3ee 76%, #dbeafe 85%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 1px 3px #222a37aa);
+      font-size: 2.2rem;
+      text-align: center;
+    }
+    /* Dynamic BG transition */
+    #dynamic-bg {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      width: 100vw; height: 100vh;
+      background: linear-gradient(140deg, #1d2940 60%, #1e3445 100%);
+      transition: background 0.9s cubic-bezier(0.48, 0.02, 0.34, 1.01);
+      will-change: background;
+    }
+    /* Custom progress bar for transition */
+    #progress-bar {
+      position: absolute;
+      left: 50%;
+      bottom: 0.42rem;
+      width: 300px;
+      height: 5px;
+      transform: translateX(-50%);
+      z-index: 50;
+      background: rgba(36,42,52,0.13);
+      border-radius: 99px;
+      overflow: hidden;
+      box-shadow:0 2px 6px #111a45a8;
+    }
+    #progress-bar-inner {
+      background: linear-gradient(90deg,#5eead4 12%, #38bdf8 95%);
+      height:100%;
+      border-radius: 99px;
+      transition:width 0.28s cubic-bezier(.63,.45,.12,1.06);
+    }
+    /* Hide scroll-X for PDF fit */
+    ::-webkit-scrollbar { width: 7px; background:rgba(44, 58, 81, 0.23);}
+    ::-webkit-scrollbar-thumb { background:rgba(56,185,205,0.12);}
+    /* Avoid horizontal scroll for PDF */
+    #main-gallery-content,body,html{max-width:100vw;overflow-x:hidden;}
+    /* Settings glass panel */
+    #settings-panel {
+      min-width: 290px;
+      min-height: 240px;
+      position: absolute;
+      top: 64px; right: 22px;
+      z-index:120;
+      pointer-events: auto;
+      display:none;
+    }
+    #settings-panel.opened { display:block; }
+    .modal-bg {
+      z-index: 119;
+      background: rgba(19, 27, 29, 0.29);
+      position: fixed;
+      left: 0;top: 0;right: 0;bottom: 0;
+      display: none;
+    }
+    .modal-bg.opened {
+      display: block;
+    }
+
+    @media (max-width: 900px) {
+      .carousel-thumb { width: 48px; height: 32px;}
+      #settings-panel { min-width:190px; font-size: 1rem;}
+      .credit-signature { font-size: 1.3rem;}
+    }
+    @media (max-width: 600px) {
+      .carousel-thumb { width: 33px; height: 23px;}
+      .credit-signature { font-size: 1.01rem; }
+      #progress-bar{width:90vw;}
+    }
+  </style>
+</head>
+<body class="relative antialiased">
+  <div id="dynamic-bg"></div>
+
+  <audio id="nature-audio" src="https://cdn.pixabay.com/audio/2022/03/15/audio_117b3e1e07.mp3" loop preload="auto"></audio>
+
+  <header class="w-full z-30 flex flex-row items-start justify-between px-6 py-5 md:py-7">
+    <div class="flex flex-col">
+      <div class="credit-signature fade-in-up shadow-md" style="margin-bottom: 0.24rem;">Created by Roshan Shrestha</div>
+      <span class="text-xs glass-panel px-3 py-1 mt-1 text-cyan-100 tracking-wider">Premium Nature Gallery: 100 Images</span>
+    </div>
+    <div class="flex space-x-3 items-center mt-2">
+      <button id="settings-btn" class="focus:outline-none bg-cyan-700 hover:bg-cyan-600 p-3 rounded-full shadow-md transition" aria-label="Settings">
+        <i class="fa-solid fa-sliders fa-lg text-cyan-100"></i>
+      </button>
+      <button id="audio-btn" class="focus:outline-none bg-slate-700 hover:bg-slate-600 p-3 rounded-full transition" aria-label="Toggle Sound">
+        <i id="audio-icon" class="fa-solid fa-volume-xmark fa-lg text-cyan-100"></i>
+      </button>
+      <button id="fullscreen-btn" class="focus:outline-none bg-slate-800 hover:bg-slate-700 p-3 rounded-full transition" aria-label="Fullscreen">
+        <i id="fullscreen-icon" class="fa-solid fa-expand fa-lg text-cyan-100"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel" class="glass p-7 pt-5 shadow-xl fixed">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-cyan-200 font-bold text-lg">Gallery Settings</span>
+      <button onclick="closeSettings()" class="text-cyan-200 hover:text-pink-300 text-xl focus:outline-none"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="mb-3">
+      <label class="text-cyan-100 block mb-1">Transition Effect</label>
+      <select id="select-effect" class="w-full rounded px-2 py-1 bg-gray-900 text-cyan-100 text-sm">
+        <option value="fade">Fade</option>
+        <option value="slide">Slide</option>
+        <option value="zoom">Zoom</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="text-cyan-100 block mb-1">Transition Speed</label>
+      <input id="speed-range" type="range" min="800" max="4000" value="2200" step="100" class="w-full">
+      <div id="speed-label" class="text-xs mt-1 text-gray-300">2.2s</div>
+    </div>
+    <div class="mb-3">
+      <label class="text-cyan-100 block mb-1">Auto-play</label>
+      <input id="autoplay-toggle" type="checkbox" checked>
+      <span class="text-xs text-sky-200 ml-2">Enabled</span>
+    </div>
+    <div>
+      <button id="close-settings-alt" class="w-full text-sky-200 bg-sky-700 mt-3 text-sm rounded-md px-2 py-2 font-semibold hover:bg-sky-900 transition">Close</button>
+    </div>
+  </div>
+  <div id="modal-bg-settings" class="modal-bg"></div>
+
+  <main id="main-gallery-content" class="w-full px-1 relative z-20 fade-in-up">
+    <!-- MAIN IMAGE PARALLAX & TRANSITIONS -->
+    <div class="relative w-full overflow-hidden gallery-parallax rounded-xl shadow-lg mt-2"
+      style="min-height: 60vh; max-height: 69vh; height: 58vw;" id="main-gallery-view">
+      <div id="img-container" class="relative h-full w-full flex items-center justify-center select-none" style="min-height: 330px;">
+        <!-- Images inserted with JS, including .gallery-img active/fade-out/slide-up/zoom-out classes-->
+      </div>
+      <!-- Magnifier lens -->
+      <div class="magnifier" id="magnifier"></div>
+      <!-- Image info overlay -->
+      <div id="img-info" class="absolute bottom-5 right-6 bg-gradient-to-br from-black/60 to-slate-900/60 p-3 rounded-xl shadow-md glass text-right pointer-events-none select-none max-w-xs md:max-w-sm transition duration-500">
+        <span id="img-location" class="block font-bold text-cyan-200 text-lg truncate"></span>
+        <span id="img-details" class="block text-cyan-100 text-xs mt-2"></span>
+      </div>
+      <!-- Custom Progress Bar -->
+      <div id="progress-bar">
+        <div id="progress-bar-inner" style="width: 0%"></div>
+      </div>
+      <!-- Controls -->
+      <div class="absolute left-0 right-0 bottom-7 flex flex-row items-center justify-center z-30 space-x-7 select-none">
+        <button id="prev-btn" class="bg-sky-600 hover:bg-sky-400 text-xl text-sky-100 p-3 rounded-full glass focus:outline-none shadow active:scale-105 transition ease-in duration-150">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button id="playpause-btn" class="bg-pink-900 hover:bg-pink-800 text-xl text-pink-200 p-3 rounded-full glass focus:outline-none shadow active:scale-105 transition ease-in duration-150">
+          <i id="playpause-icon" class="fa-solid fa-pause"></i>
+        </button>
+        <button id="next-btn" class="bg-sky-600 hover:bg-sky-400 text-xl text-sky-100 p-3 rounded-full glass focus:outline-none shadow active:scale-105 transition ease-in duration-150">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <button id="zoom-in-btn" class="bg-slate-700 hover:bg-slate-500 text-lg text-sky-100 p-2 pl-3 rounded-full glass focus:outline-none shadow transition" title="Zoom In">
+          <i class="fa-solid fa-magnifying-glass-plus"></i>
+        </button>
+        <button id="zoom-out-btn" class="bg-slate-800 hover:bg-slate-600 text-lg text-sky-100 p-2 pl-3 rounded-full glass focus:outline-none shadow transition" title="Zoom Out">
+          <i class="fa-solid fa-magnifying-glass-minus"></i>
+        </button>
+        <button id="magnifier-btn" class="bg-cyan-900 hover:bg-cyan-700 text-lg text-cyan-100 p-2 rounded-full glass focus:outline-none shadow transition relative" title="Magnifying Glass">
+          <i class="fa-solid fa-circle-dot"></i>
+        </button>
+        <button id="share-btn" class="bg-indigo-700 hover:bg-indigo-600 text-lg text-indigo-100 p-2 rounded-full glass focus:outline-none shadow transition relative" title="Share">
+          <i class="fa-solid fa-share-nodes"></i>
+        </button>
+      </div>
+    </div>
+    <!-- Filters -->
+    <div class="flex flex-wrap items-center justify-center mt-7 mb-2">
+      <span class="mr-2 text-cyan-100 font-semibold">Filter by:</span>
+      <span class="filter-chip selected" data-filter="all">All</span>
+      <span class="filter-chip" data-filter="mountain">Mountain</span>
+      <span class="filter-chip" data-filter="forest">Forest</span>
+      <span class="filter-chip" data-filter="waterfall">Waterfall</span>
+      <span class="filter-chip" data-filter="beach">Beach</span>
+      <span class="filter-chip" data-filter="flower">Flower</span>
+      <span class="filter-chip" data-filter="river">River</span>
+    </div>
+    <!-- 3D Carousel (SwiperJS) -->
+    <div class="relative mx-auto w-full max-w-6xl mt-10 mb-5 px-0 flex items-center justify-center select-none">
+      <div class="swiper-container swiper-gallery w-full max-w-4xl" style="padding-bottom:28px;">
+        <div class="swiper-wrapper" id="carousel-thumbs">
+          <!-- Thumbnails auto-inserted -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Social sharing modal -->
+  <div id="share-modal" class="modal-bg" style="z-index: 200; display:none;">
+    <div class="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 glass-panel p-7 rounded-2xl shadow-xl flex flex-col items-center min-w-[300px]">
+      <h3 class="font-bold text-xl text-cyan-200 mb-2 text-center">Share this gallery</h3>
+      <div class="flex flex-row space-x-6 mt-2 mb-6">
+        <button onclick="shareCurrent('facebook')" class="bg-blue-700 hover:bg-blue-600 p-3 rounded-full text-white">
+          <i class="fab fa-facebook-f fa-lg"></i>
+        </button>
+        <button onclick="shareCurrent('twitter')" class="bg-sky-700 hover:bg-sky-600 p-3 rounded-full text-white">
+          <i class="fab fa-twitter fa-lg"></i>
+        </button>
+        <button onclick="shareCurrent('telegram')" class="bg-cyan-700 hover:bg-cyan-600 p-3 rounded-full text-white">
+          <i class="fab fa-telegram-plane fa-lg"></i>
+        </button>
+        <button onclick="shareCurrent('whatsapp')" class="bg-green-700 hover:bg-green-600 p-3 rounded-full text-white">
+          <i class="fab fa-whatsapp fa-lg"></i>
+        </button>
+        <button onclick="shareCurrent('copy')" class="bg-slate-600 hover:bg-slate-500 p-3 rounded-full text-white">
+          <i class="fa fa-link"></i>
+        </button>
+      </div>
+      <button id="close-share-modal" class="w-full bg-pink-800 hover:bg-pink-700 text-cyan-50 mt-2 py-2 rounded-lg font-semibold">Close</button>
+    </div>
+  </div>
+  
+  <!-- SwiperJS for carousel -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+  <!-- FastAverageColor for getting dominant color of images -->
+  <script src="https://cdn.jsdelivr.net/npm/fast-average-color/dist/index.min.js"></script>
+  <script>
+    // --- GALLERY DATA ---
+    const GALLERY_IMAGES = [
+      // Sample structure:
+      // {
+      //   url: 'https://...',
+      //   thumb: 'https://...',
+      //   location: 'Banff National Park, Canada',
+      //   details: 'Photo by Christian Petrone',
+      //   type: 'mountain'
+      // }
+      // For brevity use only links, but fill up to 100 with a mix for best demo.
+      // Mountain
+      {
+        url: 'https://hips.hearstapps.com/hmg-prod/images/mt-assiniboine-provincial-park-at-sunrise-royalty-free-image-1623253564.jpg',
+        thumb: 'https://hips.hearstapps.com/hmg-prod/images/mt-assiniboine-provincial-park-at-sunrise-royalty-free-image-1623253564.jpg?resize=75:*',
+        location: 'Mt. Assiniboine, Canada',
+        details: 'Photo by Getty Images',
+        type: 'mountain'
+      },
+      {
+        url: 'https://hips.hearstapps.com/hmg-prod/images/alpe-di-siusi-sunrise-with-sassolungo-or-langkofel-royalty-free-image-1623254127.jpg',
+        thumb: 'https://hips.hearstapps.com/hmg-prod/images/alpe-di-siusi-sunrise-with-sassolungo-or-langkofel-royalty-free-image-1623254127.jpg?resize=75:*',
+        location: 'Alpe di Siusi, Italy',
+        details: 'Photo by Getty Images',
+        type: 'mountain'
+      },
+      {
+        url: 'https://worldwildschooling.com/wp-content/uploads/2024/01/Matterhorn_Mumemories_Adobe-Stock-Photo_682931585.jpg',
+        thumb: 'https://worldwildschooling.com/wp-content/uploads/2024/01/Matterhorn_Mumemories_Adobe-Stock-Photo_682931585.jpg',
+        location: 'Matterhorn, Switzerland',
+        details: 'Photo by Mumemories',
+        type: 'mountain'
+      },
+      // Forest
+      {
+        url: 'https://hips.hearstapps.com/hmg-prod/images/tropical-waterfall-amazon-rain-forest-royalty-free-image-1728411255.jpg',
+        thumb: 'https://hips.hearstapps.com/hmg-prod/images/tropical-waterfall-amazon-rain-forest-royalty-free-image-1728411255.jpg?resize=75:*',
+        location: 'Amazon Rainforest, Brazil',
+        details: 'Photo by Getty Images',
+        type: 'forest'
+      },
+      {
+        url: 'https://www.metroparks.net/wp-content/uploads/2017/06/1080p_HBK_autumn-morning_GI.jpg',
+        thumb: 'https://www.metroparks.net/wp-content/uploads/2017/06/1080p_HBK_autumn-morning_GI.jpg',
+        location: 'Central Ohio, USA',
+        details: 'Metro Parks',
+        type: 'forest'
+      },
+      // Waterfall
+      {
+        url: 'https://media.cntraveler.com/photos/571945e380cf3e034f974b7d/4:3/w_2048,h_1536,c_limit/waterfalls-Seljalandsfoss-GettyImages-457381095.jpg',
+        thumb: 'https://media.cntraveler.com/photos/571945e380cf3e034f974b7d/4:3/w_320,h_240,c_limit/waterfalls-Seljalandsfoss-GettyImages-457381095.jpg',
+        location: 'Seljalandsfoss, Iceland',
+        details: 'Photo by Getty Images',
+        type: 'waterfall'
+      },
+      {
+        url: 'https://www.travelandleisure.com/thmb/Kn6d3HR3czSzFxY0kCW5X32ELBQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/kuang-si-falls-laos-WATERFALLS1021-7f3460a7ea534cb4b13ef8b2affc6161.jpg',
+        thumb: 'https://www.travelandleisure.com/thmb/Kn6d3HR3czSzFxY0kCW5X32ELBQ=/320x0/filters:no_upscale():max_bytes(150000):strip_icc()/kuang-si-falls-laos-WATERFALLS1021-7f3460a7ea534cb4b13ef8b2affc6161.jpg',
+        location: 'Kuang Si Falls, Laos',
+        details: 'Travel+Leisure',
+        type: 'waterfall'
+      },
+      // Beach
+      {
+        url: 'https://www.travelandleisure.com/thmb/QqH7Fq40uqmIru7JFhBje2GruT4=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/baia-do-sancho-fernando-de-noronha-brazil-WRLDBEACH0421-9dcfa6d08c684ef5a42d58e98b5b0014.jpg',
+        thumb: 'https://www.travelandleisure.com/thmb/QqH7Fq40uqmIru7JFhBje2GruT4=/320x0/filters:no_upscale():max_bytes(150000):strip_icc()/baia-do-sancho-fernando-de-noronha-brazil-WRLDBEACH0421-9dcfa6d08c684ef5a42d58e98b5b0014.jpg',
+        location: 'Baia do Sancho, Brazil',
+        details: 'Travel+Leisure',
+        type: 'beach'
+      },
+      {
+        url: 'https://www.travelandleisure.com/thmb/HlNYcpqWt9t1IgQq1eTgJG3hp6k=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/saud-beach-luzon-philippines-WRLDBEACH0421-15e2c368e7ad4495be803bd60cafa379.jpg',
+        thumb: 'https://www.travelandleisure.com/thmb/HlNYcpqWt9t1IgQq1eTgJG3hp6k=/320x0/filters:no_upscale():max_bytes(150000):strip_icc()/saud-beach-luzon-philippines-WRLDBEACH0421-15e2c368e7ad4495be803bd60cafa379.jpg',
+        location: 'Saud Beach, Philippines',
+        details: 'Travel+Leisure',
+        type: 'beach'
+      },
+      // Flower
+      {
+        url: 'https://static.vecteezy.com/system/resources/previews/046/368/345/non_2x/red-poppies-in-the-field-in-evening-light-beautiful-nature-background-with-flowers-at-sunset-photo.jpg',
+        thumb: 'https://static.vecteezy.com/system/resources/previews/046/368/345/small_2x/red-poppies-in-the-field-in-evening-light-beautiful-nature-background-with-flowers-at-sunset-photo.jpg',
+        location: 'Poppies, France',
+        details: 'Vecteezy',
+        type: 'flower'
+      },
+      {
+        url: 'https://i.pinimg.com/736x/0e/89/37/0e8937e6a2aa4d547fc62d5aa218d1dd.jpg',
+        thumb: 'https://i.pinimg.com/236x/0e/89/37/0e8937e6a2aa4d547fc62d5aa218d1dd.jpg',
+        location: 'Wildflower Field',
+        details: 'Pinterest',
+        type: 'flower'
+      },
+      // Rivers
+      {
+        url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=700&q=80',
+        thumb: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=140&q=20',
+        location: 'Jenny Lake, Grand Teton',
+        details: 'Unsplash: Toan Chu',
+        type: 'river'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=700&q=80',
+        thumb: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=140&q=20',
+        location: 'Yosemite Valley River',
+        details: 'Unsplash: Mihai P',
+        type: 'river'
+      },
+    ];
+
+    // Fill up to 100 with varied demo images (reuse and shuffle for demo)
+    while (GALLERY_IMAGES.length < 100) {
+      let base = GALLERY_IMAGES[GALLERY_IMAGES.length % 12];
+      let n = Math.floor(GALLERY_IMAGES.length / 12) + 1;
+      GALLERY_IMAGES.push({
+        ...base,
+        location: base.location + ` #${n}`,
+        details: base.details.replace(/#(\d+)/, '') + ` | Set ${n}`,
+      });
+    }
+
+    // --- APP STATE ---
+    let state = {
+      currentIndex: 0,
+      filter: 'all',
+      showMagnifier: false,
+      magnifierPos: [0,0],
+      magnifierOn: false,
+      zoom: 1,
+      transitionEffect: 'fade',
+      transitionSpeed: 2200,
+      isAutoplay: true,
+      isMuted: true,
+      isFullscreen: false,
+    };
+
+    // --- UTILS ---
+    function filteredIndexes() {
+      if (state.filter === 'all') return GALLERY_IMAGES.map((_,i) => i);
+      return GALLERY_IMAGES.map((img, i) => img.type === state.filter ? i : -1).filter(i => i >= 0);
+    }
+    function clamp(val, min, max){ return Math.max(min, Math.min(max, val)); }
+    function getCurrentImage() {
+      let list = filteredIndexes();
+      let idx = state.currentIndex;
+      if (idx >= list.length) idx = 0;
+      return GALLERY_IMAGES[list[idx]];
+    }
+    function getCurrentIndexReal() {
+      let list = filteredIndexes();
+      return list[state.currentIndex] ?? 0;
+    }
+    function setDynamicBG(col) {
+      document.getElementById('dynamic-bg').style.background = `linear-gradient(130deg, ${col} 0%, #1d314c 100%)`;
+    }
+    // --- COMPONENTS ---
+    function showGalleryImage(idx, effectName='fade', direction=1) {
+      let imgContainer = document.getElementById('img-container');
+      let currImgs = imgContainer.querySelectorAll('.gallery-img');
+      currImgs.forEach(img => {
+        img.classList.remove('active','fade-out','slide-up','zoom-out');
+        // Remove from DOM after animation
+        setTimeout(() => img.remove(), 800);
+      });
+      let img = new Image();
+      let item = GALLERY_IMAGES[idx];
+      img.src = item.url;
+      img.className = 'gallery-img';
+      img.style.zIndex = 10;
+      if (effectName === 'fade') img.classList.add('active');
+      if (effectName === 'slide') {
+        img.style.transform = `translateX(${direction>0? '60px':'-60px'}) scale(1.03)`;
+        img.style.opacity = '0';
+        setTimeout(() => {
+          img.style.transform = 'translateX(0) scale(1)';
+          img.style.opacity = '1';
+        }, 28);
+      }
+      if (effectName === 'zoom') {
+        img.style.transform = 'scale(1.12)';
+        setTimeout(() => { img.classList.add('active'); }, 30);
+      }
+      img.onload = function () {
+        // Dynamic color for background
+        const fac = new FastAverageColor();
+        fac.getColorAsync(img).then(color => {
+          setDynamicBG(`rgba(${color.value[0]},${color.value[1]},${color.value[2]},0.90)`);
+        });
+      };
+      imgContainer.appendChild(img);
+      setTimeout(() => img.classList.add('active'), 28);
+
+      // Update overlay info
+      document.getElementById('img-location').textContent = item.location || '';
+      document.getElementById('img-details').textContent = item.details || '';
+
+      // Preload next two images
+      let fIdx = filteredIndexes();
+      [1,2].forEach(offset => {
+        let ni = (state.currentIndex + offset) % fIdx.length;
+        let imgNxt = new Image();
+        imgNxt.src = GALLERY_IMAGES[fIdx[ni]].url;
+      });
+    }
+
+    function renderThumbnails() {
+      let cThumbs = document.getElementById('carousel-thumbs');
+      cThumbs.innerHTML = '';
+      let fIdx = filteredIndexes();
+      fIdx.forEach((idx, i) => {
+        let thumb = document.createElement('img');
+        thumb.className = 'carousel-thumb swiper-slide cursor-pointer transition-all border-2';
+        thumb.src = GALLERY_IMAGES[idx].thumb;
+        thumb.setAttribute('data-carousel-idx', i);
+        if (i === state.currentIndex) thumb.classList.add('thumbnail-active');
+        cThumbs.appendChild(thumb);
+      });
+    }
+    function updateActiveThumbnail(idx) {
+      document.querySelectorAll('.carousel-thumb').forEach((el,i) => {
+        el.classList.toggle('thumbnail-active', i === idx);
+      });
+      if(window?.gallerySwiper){
+        window.gallerySwiper.slideTo?.(idx, 100);
+      }
+    }
+    // --- MAIN LOGIC ---
+    function displayCurrentImage(transDir = 1, effectOverride = null) {
+      let list = filteredIndexes();
+      if (state.currentIndex >= list.length) state.currentIndex = 0;
+      if (state.currentIndex < 0) state.currentIndex = list.length - 1;
+      let effect = effectOverride || state.transitionEffect;
+      showGalleryImage(list[state.currentIndex], effect, transDir);
+      updateActiveThumbnail(state.currentIndex);
+      // Progress
+      progressBarRun();
+    }
+
+    function nextImage(auto=false) {
+      let prevIdx = state.currentIndex;
+      state.currentIndex = (state.currentIndex + 1) % filteredIndexes().length;
+      displayCurrentImage(1, auto ? state.transitionEffect : null);
+    }
+    function prevImage() {
+      state.currentIndex = (state.currentIndex - 1 + filteredIndexes().length) % filteredIndexes().length;
+      displayCurrentImage(-1);
+    }
+
+    // --- AUTOPLAY LOGIC ---
+    let autoplayTimer = null;
+    function startAutoplay() {
+      if (autoplayTimer) clearTimeout(autoplayTimer);
+      if (!state.isAutoplay) return;
+      progressBarRun();
+      autoplayTimer = setTimeout(() => {
+        nextImage(true);
+        startAutoplay();
+      }, state.transitionSpeed);
+    }
+    function stopAutoplay() {
+      if (autoplayTimer) clearTimeout(autoplayTimer);
+    }
+
+    // --- PROGRESS BAR ---
+    function progressBarRun(){
+      const bar = document.getElementById('progress-bar-inner');
+      bar.style.width = '0%';
+      setTimeout(()=>{
+        bar.style.transition = `width ${state.transitionSpeed}ms linear`;
+        bar.style.width = '100%';
+      },48);
+    }
+
+    // --- ZOOM / MAGNIFIER ---
+    function setZoom(level){
+      state.zoom = clamp(level, 1, 3.7);
+      let img = document.getElementById('img-container').querySelector('.gallery-img');
+      if(img) {
+        img.style.transition = "transform 0.32s cubic-bezier(.82,.3,.22,1.1)";
+        img.style.transform = `scale(${state.zoom})`;
+        if(state.zoom === 1) img.style.cursor = 'default';
+        else img.style.cursor = 'grab';
+      }
+    }
+    function enableMagnifier(){
+      state.magnifierOn = true;
+      document.getElementById('magnifier').style.display = 'block';
+    }
+    function disableMagnifier(){
+      state.magnifierOn = false;
+      document.getElementById('magnifier').style.display = 'none';
+    }
+
+    // --- KEYBOARD SHORTCUTS ---
+    function handleKey(e){
+      if(document.activeElement?.type==="range" || document.activeElement?.type==="text")return;
+      switch(e.key){
+        case 'ArrowLeft': prevImage(); stopAutoplay(); break;
+        case 'ArrowRight': nextImage(); stopAutoplay(); break;
+        case ' ': e.preventDefault(); togglePlayPause(); break;
+        case '+': setZoom(state.zoom + 0.2); break;
+        case '-': setZoom(state.zoom - 0.2); break;
+        case 'f': toggleFullscreen(); break;
+        case 's': openSettings(); break;
+        case 'm': toggleMagnifierMode(); break;
+      }
+    }
+
+    // --- SOCIAL SHARE HANDLERS ---
+    function shareCurrent(platform){
+      const img = getCurrentImage();
+      const shareUrl = window.location.href.split('#')[0] + `#img${getCurrentIndexReal()+1}`;
+      const text = encodeURIComponent(`Check out this beautiful nature photo: "${img.location}"`);
+      if(platform==='facebook'){
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,'_blank');
+      } else if(platform==='twitter'){
+        window.open(`https://twitter.com/share?url=${encodeURIComponent(shareUrl)}&text=${text}`,'_blank');
+      } else if(platform==='telegram') {
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${text}`,'_blank');
+      } else if(platform==='whatsapp') {
+        window.open(`https://api.whatsapp.com/send?text=${text}%20${encodeURIComponent(shareUrl)}`,'_blank');
+      } else if(platform==='copy'){
+        navigator.clipboard.writeText(shareUrl);
+      }
+      closeShareModal();
+    }
+
+    function openShareModal(){
+      document.getElementById('share-modal').style.display='block';
+    }
+    function closeShareModal(){
+      document.getElementById('share-modal').style.display='none';
+    }
+
+    // --- SETTINGS ---
+    function openSettings(){
+      document.getElementById("settings-panel").classList.add("opened");
+      document.getElementById("modal-bg-settings").classList.add("opened");
+    }
+    function closeSettings(){
+      document.getElementById("settings-panel").classList.remove("opened");
+      document.getElementById("modal-bg-settings").classList.remove("opened");
+    }
+
+    // --- FULLSCREEN ---
+    function toggleFullscreen(){
+      let el = document.documentElement;
+      if (!state.isFullscreen) {
+        if(el.requestFullscreen) el.requestFullscreen();
+        else if(el.mozRequestFullScreen) el.mozRequestFullScreen();
+        else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        else if(el.msRequestFullscreen) el.msRequestFullscreen();
+        state.isFullscreen = true;
+        document.getElementById('fullscreen-icon').classList.remove("fa-expand");
+        document.getElementById('fullscreen-icon').classList.add("fa-compress");
+      } else {
+        if(document.exitFullscreen) document.exitFullscreen();
+        else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
+        else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if(document.msExitFullscreen) document.msExitFullscreen();
+        state.isFullscreen = false;
+        document.getElementById('fullscreen-icon').classList.add("fa-expand");
+        document.getElementById('fullscreen-icon').classList.remove("fa-compress");
+      }
+    }
+
+    // --- AUDIO CONTROLS ---
+    function toggleAudio(){
+      const audio = document.getElementById('nature-audio');
+      state.isMuted = !state.isMuted;
+      if(!state.isMuted){
+        audio.play();
+        document.getElementById('audio-icon').classList.remove("fa-volume-xmark");
+        document.getElementById('audio-icon').classList.add("fa-volume-up");
+      } else {
+        audio.pause();
+        document.getElementById('audio-icon').classList.add("fa-volume-xmark");
+        document.getElementById('audio-icon').classList.remove("fa-volume-up");
+      }
+    }
+
+    // --- MAGNIFIER ---
+    function toggleMagnifierMode(){
+      state.magnifierOn = !state.magnifierOn;
+      let magDiv = document.getElementById('magnifier');
+      magDiv.style.display = state.magnifierOn ? 'block' : 'none';
+    }
+    function moveMagnifier(e){
+      if(!state.magnifierOn) return;
+      let img = document.getElementById('img-container').querySelector('.gallery-img');
+      let magDiv = document.getElementById('magnifier');
+      if(!img || !magDiv) return;
+      let rect = img.getBoundingClientRect();
+      let mx = e.touches?.[0]?.clientX??e.clientX;
+      let my = e.touches?.[0]?.clientY??e.clientY;
+      let x = mx - rect.left;
+      let y = my - rect.top;
+      x = clamp(x,0,rect.width);
+      y = clamp(y,0,rect.height);
+      magDiv.style.left = (mx - 90) + "px";
+      magDiv.style.top = (my - 90) + "px";
+      magDiv.style.backgroundPosition = `-${x*2.2-90}px -${y*2.2-90}px`;
+      magDiv.style.backgroundSize = `${rect.width*2.2}px ${rect.height*2.2}px`;
+      magDiv.style.backgroundImage = `url('${img.src}')`;
+    }
+    function cleanupMagnifier(){
+      let magDiv = document.getElementById('magnifier');
+      magDiv.style.backgroundImage='';
+      magDiv.style.display='none';
+      state.magnifierOn = false;
+    }
+
+    // --- PDF OPTIMIZATION ---
+    // No scrollbars on carousels etc
+
+    // --- MAIN INITIALIZER ---
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // Insert first image and fill thumbnails
+      renderThumbnails();
+      displayCurrentImage();
+      // Swiper 3D carousel for thumbs
+      setTimeout(() => {
+        window.gallerySwiper = new Swiper('.swiper-gallery', {
+          slidesPerView: 7,
+          spaceBetween: 16,
+          freeMode: true,
+          grabCursor: true,
+          centeredSlides: true,
+          loop: false,
+          effect: 'coverflow',
+          coverflowEffect: {
+            rotate: 30,
+            stretch: 0,
+            depth: 80,
+            modifier: 1,
+            slideShadows: false,
+          },
+          breakpoints: {
+            900: {slidesPerView:7},
+            600: {slidesPerView:5},
+            300: {slidesPerView:3}
+          }
+        });
+      }, 150);
+      // Carousel click handler
+      document.getElementById('carousel-thumbs').addEventListener('click',e=>{
+        if(e.target.classList.contains('carousel-thumb')){
+          state.currentIndex = parseInt(e.target.getAttribute('data-carousel-idx'));
+          displayCurrentImage();
+          stopAutoplay();
+        }
+      });
+      // Play/pause
+      document.getElementById('playpause-btn').addEventListener('click', ()=>{
+        state.isAutoplay = !state.isAutoplay;
+        document.getElementById('playpause-icon').classList.toggle('fa-pause', state.isAutoplay);
+        document.getElementById('playpause-icon').classList.toggle('fa-play', !state.isAutoplay);
+        if(state.isAutoplay) startAutoplay(); else stopAutoplay();
+      });
+      // Next/prev, zoom
+      document.getElementById('next-btn').addEventListener('click', ()=>{ nextImage(); stopAutoplay(); });
+      document.getElementById('prev-btn').addEventListener('click', ()=>{ prevImage(); stopAutoplay(); });
+      document.getElementById('zoom-in-btn').addEventListener('click', ()=> setZoom(state.zoom+0.2));
+      document.getElementById('zoom-out-btn').addEventListener('click', ()=> setZoom(state.zoom-0.2));
+      document.getElementById('magnifier-btn').addEventListener('click', toggleMagnifierMode);
+      document.getElementById('share-btn').addEventListener('click', openShareModal);
+      document.getElementById('audio-btn').addEventListener('click', toggleAudio);
+      document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+      document.getElementById('settings-btn').addEventListener('click', openSettings);
+      document.getElementById('close-settings-alt').addEventListener('click', closeSettings);
+      document.getElementById('modal-bg-settings').addEventListener('click', closeSettings);
+      document.getElementById('close-share-modal').addEventListener('click', closeShareModal);
+      // Filters
+      document.querySelectorAll('.filter-chip').forEach(el=>{
+        el.addEventListener('click', function(){
+          document.querySelectorAll('.filter-chip').forEach(e=>e.classList.remove('selected'));
+          el.classList.add('selected');
+          let f = el.getAttribute('data-filter');
+          state.filter = f;
+          state.currentIndex = 0;
+          renderThumbnails();
+          displayCurrentImage();
+        });
+      });
+      // Settings form updates
+      document.getElementById('select-effect').addEventListener('change', e=>{
+        state.transitionEffect = e.target.value;
+      });
+      document.getElementById('speed-range').addEventListener('input',e=>{
+        state.transitionSpeed = +e.target.value;
+        document.getElementById('speed-label').textContent = (state.transitionSpeed/1000).toFixed(2) + 's';
+      });
+      document.getElementById('autoplay-toggle').addEventListener('change',e=>{
+        state.isAutoplay = e.target.checked;
+        document.getElementById('playpause-icon').classList.toggle('fa-pause', state.isAutoplay);
+        document.getElementById('playpause-icon').classList.toggle('fa-play', !state.isAutoplay);
+        if(state.isAutoplay) startAutoplay(); else stopAutoplay();
+      });
+
+      // Touch pan/zoom & magnifier events
+      let imgContainer = document.getElementById('img-container');
+      imgContainer.addEventListener('mousemove', moveMagnifier);
+      imgContainer.addEventListener('mouseleave', cleanupMagnifier);
+      imgContainer.addEventListener('wheel', (e)=>{
+        if( e.ctrlKey ){
+          e.preventDefault();
+          setZoom(state.zoom + (e.deltaY<0 ? 0.13 : -0.13));
+        }
+      }, {passive:false});
+      // Touch pan for zoomed
+      let isPanning = false, startX = 0, startY = 0, panX = 0, panY = 0;
+      imgContainer.addEventListener('mousedown', function(e){
+        let img = imgContainer.querySelector('.gallery-img');
+        if(!img || state.zoom === 1) return;
+        isPanning = true;
+        startX = e.clientX - panX; startY = e.clientY - panY;
+        img.style.cursor = 'grabbing';
+      });
+      imgContainer.addEventListener('mouseup', function(){
+        isPanning = false;
+        let img = imgContainer.querySelector('.gallery-img');
+        if(img) img.style.cursor = state.zoom>1?'grab':'default';
+      });
+      imgContainer.addEventListener('mouseleave', function(){ isPanning = false; });
+      imgContainer.addEventListener('mousemove', function(e){
+        let img = imgContainer.querySelector('.gallery-img');
+        if(!img || !isPanning) return;
+        panX = clamp(e.clientX - startX, -500,500);
+        panY = clamp(e.clientY - startY, -500,500);
+        img.style.transform = `scale(${state.zoom}) translate(${panX/2}px,${panY/2}px)`;
+      });
+      // Touch for mobile
+      imgContainer.addEventListener('touchmove', moveMagnifier);
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', handleKey);
+
+      // Start autoplay and progress
+      startAutoplay();
+
+      // On window unload, pause audio
+      window.addEventListener('beforeunload', ()=>{ stopAutoplay(); document.getElementById('nature-audio').pause();});
+    });
+
+    // Entrance animation
+    setTimeout(()=>document.body.classList.remove('opacity-0'),180);
+  </script>
+</body>
+</html>
