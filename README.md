@@ -1,2 +1,2 @@
 # Premium-Nature-Galler
-![Uploading Screenshot From 2025-04-24 02-51-06.png…]()
+https://github.com/Roshanshrestha1/Premium-Nature-Gallery/blob/main/Screenshot%20From%202025-04-24%2002-51-06.png
