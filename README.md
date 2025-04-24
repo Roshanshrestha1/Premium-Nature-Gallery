@@ -1,4 +1,4 @@
 # Premium-Nature-Galler
 https://roshanshrestha1.github.io/Premium-Nature-Gallery/
 
-https://github.com/Roshanshrestha1/Premium-Nature-Gallery/blob/main/Screenshot%20From%202025-04-24%2002-51-06.png?raw=true
+![Screenshot From 2025-04-24 02-51-06](https://github.com/user-attachments/assets/61693a3b-9fc5-4993-b495-da7fec2cc40e)
